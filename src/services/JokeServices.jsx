@@ -2,7 +2,22 @@
 
 const baseURL = 'http://localhost:8088/jokes'; 
 
-// * Function to post a new joke
+// Function to fetch jokes from the database
+export const fetchJokes = async () => {
+  try {
+    const response = await fetch(baseURL);
+    if (!response.ok) {
+      throw new Error('Failed to fetch jokes');
+    }
+    const data = await response.json();
+    return data; // Return the fetched jokes
+  } catch (error) {
+    console.error("Error fetching jokes:", error);
+    throw error; // Rethrow the error so it can be handled by the caller
+  }
+};
+
+// Function to post a new joke
 export const postJoke = async (jokeText) => {
   try {
     const response = await fetch(baseURL, {
@@ -20,10 +35,10 @@ export const postJoke = async (jokeText) => {
       throw new Error('Error posting joke');
     }
 
-    const data = await response.json(); // * Waits for the response body to be  parsed as JSON, then assigns that to the data variable.
-    return data;
+    const data = await response.json();
+    return data; 
   } catch (error) {
     console.error("Failed to post new joke:", error);
-    throw error;
+    throw error; 
   }
 };

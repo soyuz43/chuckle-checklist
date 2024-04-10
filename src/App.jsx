@@ -1,48 +1,68 @@
-import "./App.css"
-import React, { useState } from 'react';
-import { handleSubmit } from "./services/HandleSubmission";
-
-
-
+import "./App.css";
+import React, { useState, useEffect } from 'react';
+import { fetchJokes, postJoke } from "./services/JokeServices.jsx";
 
 export const TextInputComponent = () => {
   const [inputValue, setInputValue] = useState('');
   const [placeholderText, setPlaceholderText] = useState('New One Liner');
+  const [jokes, setJokes] = useState([]); // State for storing jokes
+
+  useEffect(() => {
+    // Fetch jokes on component mount
+    const initFetchJokes = async () => {
+      try {
+        const fetchedJokes = await fetchJokes();
+        setJokes(fetchedJokes); // Update the jokes state with the fetched jokes
+      } catch (error) {
+        console.error("Failed to fetch jokes:", error);
+      }
+    };
+    initFetchJokes();
+  }, []);
 
   const handleSubmit = async () => {
     if (!inputValue.trim()) {
-      // If input is empty, update placeholder and prevent further execution
       setPlaceholderText('Cannot be blank input');
-      return; // Prevents the submission logic from executing
+      return; 
     }
 
     try {
-      await postJoke(inputValue);
-      setInputValue(''); // Reset input field after successful submission
-      setPlaceholderText('New One Liner'); // Reset placeholder text
-      // Optionally: Trigger any UI updates or notifications here
-    } catch (error) {
-      // Handle errors (e.g., show error message)
+      const newJoke = await postJoke(inputValue); // Assuming this returns a joke object
+      setJokes(prevJokes => [...prevJokes, newJoke]); // Append the new joke object
+      setInputValue(''); // Clear the input field
+      setPlaceholderText('New One Liner'); // Reset the placeholder
+    } 
+    catch (error) {
       console.error("Failed to post new joke:", error);
     }
   };
 
   return (
     <>
-      <input
-        className="joke-input"
-        type="text"
-        value={inputValue}
-        placeholder={placeholderText}
-        onChange={(e) => {
-          setInputValue(e.target.value);
-          if (placeholderText !== 'New One Liner') {
-            // Reset placeholder text when the user starts typing
-            setPlaceholderText('New One Liner');
-          }
-        }}
-      />
-      <button onClick={handleSubmit}>Submit Joke</button>
+      <div>
+        <h2 className="title">Chuckle Checklist</h2>
+        <div>
+          <input
+            className="joke-input"
+            type="text"
+            value={inputValue}
+            placeholder={placeholderText}
+            onChange={(event) => {
+              setInputValue(event.target.value);
+              if (placeholderText !== 'New One Liner') {
+                setPlaceholderText('New One Liner');
+              }
+            }}
+          />
+          <button onClick={handleSubmit}>Submit Joke</button>
+        </div>
+        {/* Display jokes below */}
+        <div className="main">
+          {jokes.map((joke, index) => (
+            <p key={index}>{joke.text}</p> // Ensure we're accessing the text property
+          ))}
+        </div>
+      </div>
     </>
   );
 };
