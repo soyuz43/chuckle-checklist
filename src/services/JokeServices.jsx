@@ -59,3 +59,27 @@ export const deleteJoke = async (jokeId) => {
     throw error; // Rethrow the error so it can be handled by the caller
   }
 };
+// # Function to modify the told status of a joke 
+export const toggleToldStatus = async (jokeId, currentStatus) => {
+  try {
+    console.log(`Sending PATCH request to toggle told status for joke ${jokeId} to ${!currentStatus}`);
+
+    const response = await fetch(`http://localhost:8088/jokes/${jokeId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ told: !currentStatus })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to toggle told status');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error toggling told status:", error);
+    throw error;
+  }
+};

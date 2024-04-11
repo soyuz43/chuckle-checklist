@@ -1,6 +1,6 @@
 import "./App.css";
 import React, { useState, useEffect } from "react";
-import { fetchJokes, postJoke, deleteJoke } from "./services/JokeServices.jsx";
+import { fetchJokes, postJoke, deleteJoke, toggleToldStatus } from "./services/JokeServices.jsx";
 import stevePic from "./assets/steve_output.png"
 
 export const TextInputComponent = () => {
@@ -14,36 +14,40 @@ export const TextInputComponent = () => {
     fetchAllJokes();
   }, []);
 
-  const fetchAllJokes = async () => {  
-      const fetchedJokes = await fetchJokes();
-      setAllJokes(fetchedJokes);
-      setUntoldJokes(fetchedJokes.filter((joke) => !joke.told));
-      setToldJokes(fetchedJokes.filter((joke) => joke.told));
-    
+  const fetchAllJokes = async () => {
+    const fetchedJokes = await fetchJokes();
+    setAllJokes(fetchedJokes);
+    setUntoldJokes(fetchedJokes.filter((joke) => !joke.told));
+    setToldJokes(fetchedJokes.filter((joke) => joke.told));
   };
 
-  const handleDelete = async (jokeId) => {  // ! jokeId is the key in the <p> tags!!
-      await deleteJoke(jokeId);
-      fetchAllJokes(); // * Refetch jokes & update the ui after deletion
-    
+  const handleDelete = async (jokeId) => {
+    await deleteJoke(jokeId);
+    fetchAllJokes();                                                 // * Refetch jokes & update the UI after deletion
   };
 
-  // ! HandleSubmit
+  const handleToggleTold = async (jokeId, joke) => {
+      await toggleToldStatus(jokeId, joke);
+      fetchAllJokes();  // Assuming you have a function to refetch all jokes
+   
+  };
+  
+
   const handleSubmit = async () => {
-    if (!inputValue.trim()) {                             // * Check if the input value is empty or just whitespace
-      setPlaceholderText("Cannot be blank input");        // * If input is empty, set placeholder text to indicate that
-      return;                                             // * Return to prevent extecution
+    if (!inputValue.trim()) {                                        // * Check if the input value is empty or just whitespace
+      setPlaceholderText("Cannot be blank input");                   // * If input is empty, set placeholder text to indicate that
+      return;                                                        // * Return to prevent further execution
     }
 
     try {
       const newJoke = await postJoke(inputValue);
       const updatedAllJokes = [...allJokes, newJoke];
-      setAllJokes(updatedAllJokes);                                 // * Update the state with the new array of all jokes
-      setUntoldJokes(updatedAllJokes.filter((joke) => !joke.told)); // #  Updates the UI with the new submission ('told' property=false when submitted)
-      setInputValue("");                                            // * reset the input value to indicate submission
+      setAllJokes(updatedAllJokes);                                  // * Update the state with the new array of all jokes
+      setUntoldJokes(updatedAllJokes.filter((joke) => !joke.told));  // * Updates the UI with the new submission ('told' property=false when submitted)
+      setInputValue("");                                             // * Reset the input value after submission
       setPlaceholderText("New One Liner");
     } catch (error) {
-      console.error("Failed to post new joke:", error);            //  Catch & log errors if one arises
+      console.error("Failed to post new joke:", error);              // Catch & log errors if one arises
     }
   };
 
@@ -61,7 +65,7 @@ export const TextInputComponent = () => {
             value={inputValue}
             placeholder={placeholderText}
             onChange={(event) => {
-              setInputValue(event.target.value);   // ! Handles text input changes that are not submitted
+              setInputValue(event.target.value);                   // * Handles text input changes that are not submitted
               if (placeholderText !== "New One Liner") {
                 setPlaceholderText("New One Liner");
               }
@@ -77,29 +81,35 @@ export const TextInputComponent = () => {
             <ul>
               {untoldJokes.map((joke, index) => (
                 <li key={index} className="joke-list-item">
-                  <p className="joke-list-item-text">{joke.text}</p> 
-                  <div> 
+                  <p className="joke-list-item-text">{joke.text}</p>
+                  <div>
                     <button className="joke-list-action-delete" onClick={() => handleDelete(joke.id)}>Delete</button>
+                    <button className="joke-list-action-toggle" onClick={() => handleToggleTold(joke.id, !joke.told)}>
+                      {joke.told ? 'Mark Untold' : 'Mark Told'}
+                    </button>
                   </div>
                 </li>
               ))}
             </ul>
-        </div>
-        <div className="joke-list-container">
-          <h2>Told Jokes <span className="told-count">({toldJokes.length})</span></h2>
-          <ul>
-            {toldJokes.map((joke, index) => (
-              <li key={index} className="joke-list-item">
-                <p className="joke-list-item-text">{joke.text}</p> 
-                <div> 
-                  <button className="joke-list-action-delete" onClick={() => handleDelete(joke.id)}>Delete</button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          </div>
+          <div className="joke-list-container">
+            <h2>Told Jokes <span className="told-count">({toldJokes.length})</span></h2>
+            <ul>
+              {toldJokes.map((joke, index) => (
+                <li key={index} className="joke-list-item">
+                  <p className="joke-list-item-text">{joke.text}</p>
+                  <div>
+                    <button className="joke-list-action-delete" onClick={() => handleDelete(joke.id)}>Delete</button>
+                    <button className="joke-list-action-toggle" onClick={() => handleToggleTold(joke.id, !joke.told)}>
+                      {joke.told ? 'Mark Untold' : 'Mark Told'}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
-    </div>
-  </>
-);
+    </>
+  );
 }
