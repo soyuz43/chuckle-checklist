@@ -5,14 +5,17 @@ import { fetchJokes, postJoke } from "./services/JokeServices.jsx";
 export const TextInputComponent = () => {
   const [inputValue, setInputValue] = useState('');
   const [placeholderText, setPlaceholderText] = useState('New One Liner');
-  const [jokes, setJokes] = useState([]); // State for storing jokes
+  const [allJokes, setAllJokes] = useState([]);
+  const [untoldJokes, setUntoldJokes] = useState([]);
+  const [toldJokes, setToldJokes] = useState([]);
 
   useEffect(() => {
-    // Fetch jokes on component mount
     const initFetchJokes = async () => {
       try {
         const fetchedJokes = await fetchJokes();
-        setJokes(fetchedJokes); // Update the jokes state with the fetched jokes
+        setAllJokes(fetchedJokes);
+        setUntoldJokes(fetchedJokes.filter(joke => !joke.told));
+        setToldJokes(fetchedJokes.filter(joke => joke.told));
       } catch (error) {
         console.error("Failed to fetch jokes:", error);
       }
@@ -27,21 +30,22 @@ export const TextInputComponent = () => {
     }
 
     try {
-      const newJoke = await postJoke(inputValue); // Assuming this returns a joke object
-      setJokes(prevJokes => [...prevJokes, newJoke]); // Append the new joke object
-      setInputValue(''); // Clear the input field
-      setPlaceholderText('New One Liner'); // Reset the placeholder
-    } 
-    catch (error) {
+      const newJoke = await postJoke(inputValue);
+      const updatedAllJokes = [...allJokes, newJoke];
+      setAllJokes(updatedAllJokes);
+      setUntoldJokes(updatedAllJokes.filter(joke => !joke.told));
+      setInputValue('');
+      setPlaceholderText('New One Liner');
+    } catch (error) {
       console.error("Failed to post new joke:", error);
     }
   };
 
   return (
     <>
-      <div>
+      <div className="app-container">
         <h2 className="title">Chuckle Checklist</h2>
-        <div>
+        <div className="joke-add-form">
           <input
             className="joke-input"
             type="text"
@@ -54,15 +58,24 @@ export const TextInputComponent = () => {
               }
             }}
           />
-          <button onClick={handleSubmit}>Submit Joke</button>
+          <button className="joke-input-submit" onClick={handleSubmit}>Submit Joke</button>
         </div>
-        {/* Display jokes below */}
-        <div className="main">
-          {jokes.map((joke, index) => (
-            <p key={index}>{joke.text}</p> // Ensure we're accessing the text property
-          ))}
+        <div className="joke-lists-container">
+          <div className="jokes-column">
+            <h3 className="title">Untold Jokes</h3>
+            {untoldJokes.map((joke, index) => (
+              <p className="untold-count joke-item" key={index}>{joke.text}</p>
+            ))}
+          </div>
+          <div className="jokes-column">
+            <h3 className="title">Told Jokes</h3>
+            {toldJokes.map((joke, index) => (
+              <p className="told-count joke-item" key={index}>{joke.text}</p>
+            ))}
+          </div>
         </div>
       </div>
     </>
   );
-};
+  
+}
