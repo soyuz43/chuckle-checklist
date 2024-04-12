@@ -60,26 +60,27 @@ export const deleteJoke = async (jokeId) => {
   }
 };
 // # Function to modify the told status of a joke 
-export const toggleToldStatus = async (jokeId, currentStatus) => {
+export const toggleToldStatus = async (joke) => {
   try {
-    console.log(`Sending PATCH request to toggle told status for joke ${jokeId} to ${!currentStatus}`);
+    const updatedJoke = { ...joke, told: !joke.told };
+    console.log(`Sending PUT request to update joke ${joke.id}`);
 
-    const response = await fetch(`http://localhost:8088/jokes/${jokeId}`, {
-      method: 'PATCH',
+    const response = await fetch(`http://localhost:8088/jokes/${joke.id}`, {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ told: !currentStatus })
+      body: JSON.stringify(updatedJoke)
     });
 
     if (!response.ok) {
-      throw new Error('Failed to toggle told status');
+      throw new Error('Failed to update joke status');
     }
 
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error toggling told status:", error);
+    console.error("Error updating joke status:", error);
     throw error;
   }
 };

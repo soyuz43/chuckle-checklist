@@ -1,3 +1,4 @@
+//App.jsx
 import "./App.css";
 import React, { useState, useEffect } from "react";
 import { fetchJokes, postJoke, deleteJoke, toggleToldStatus } from "./services/JokeServices.jsx";
@@ -26,11 +27,11 @@ export const TextInputComponent = () => {
     fetchAllJokes();                                                 // * Refetch jokes & update the UI after deletion
   };
 
-  const handleToggleTold = async (jokeId, joke) => {
-      await toggleToldStatus(jokeId, joke);
-      fetchAllJokes();  // Assuming you have a function to refetch all jokes
-   
-  };
+const handleToggleTold = async (joke) => {
+  await toggleToldStatus(joke);
+  fetchAllJokes();                                                   // * Refresh the joke list after toggling the status
+};
+
   
 
   const handleSubmit = async () => {
@@ -84,8 +85,8 @@ export const TextInputComponent = () => {
                   <p className="joke-list-item-text">{joke.text}</p>
                   <div>
                     <button className="joke-list-action-delete" onClick={() => handleDelete(joke.id)}>Delete</button>
-                    <button className="joke-list-action-toggle" onClick={() => handleToggleTold(joke.id, !joke.told)}>
-                      {joke.told ? 'Mark Untold' : 'Mark Told'}
+                    <button className="joke-list-action-toggle" onClick={() => handleToggleTold(joke)}>
+                          {joke.told ? 'Mark Untold' : 'Mark Told'}
                     </button>
                   </div>
                 </li>
@@ -100,8 +101,8 @@ export const TextInputComponent = () => {
                   <p className="joke-list-item-text">{joke.text}</p>
                   <div>
                     <button className="joke-list-action-delete" onClick={() => handleDelete(joke.id)}>Delete</button>
-                    <button className="joke-list-action-toggle" onClick={() => handleToggleTold(joke.id, !joke.told)}>
-                      {joke.told ? 'Mark Untold' : 'Mark Told'}
+                    <button className="joke-list-action-toggle" onClick={() => handleToggleTold(joke)}>
+                            {joke.told ? 'Mark Untold' : 'Mark Told'}
                     </button>
                   </div>
                 </li>
