@@ -1,0 +1,246 @@
+```
+import React from "react"
+import ReactDOM from "react-dom/client"
+import { TextInputComponent } from "./App.jsx"
+import "./index.css"
+
+const container = document.getElementById("root")
+const root = ReactDOM.createRoot(container)
+
+
+root.render(<TextInputComponent />)
+```
+```
+//App.jsx
+import "./App.css";
+import React, { useState, useEffect } from "react";
+import { fetchJokes, postJoke, deleteJoke, toggleToldStatus } from "./services/JokeServices.jsx";
+import stevePic from "./assets/steve_output.png"
+
+export const TextInputComponent = () => {
+  const [inputValue, setInputValue] = useState("");
+  const [placeholderText, setPlaceholderText] = useState("New One Liner");
+  const [allJokes, setAllJokes] = useState([]);
+  const [untoldJokes, setUntoldJokes] = useState([]);
+  const [toldJokes, setToldJokes] = useState([]);
+
+  useEffect(() => {
+    fetchAllJokes();
+  }, []);
+
+  const fetchAllJokes = async () => {
+    const fetchedJokes = await fetchJokes();
+    setAllJokes(fetchedJokes);
+    setUntoldJokes(fetchedJokes.filter((joke) => !joke.told));
+    setToldJokes(fetchedJokes.filter((joke) => joke.told));
+  };
+
+  const handleDelete = async (jokeId) => {
+    await deleteJoke(jokeId);
+    fetchAllJokes();                                                 // * Refetch jokes & update the UI after deletion
+  };
+
+const handleToggleTold = async (joke) => {
+  await toggleToldStatus(joke);
+  fetchAllJokes();                                                   // * Refresh the joke list after toggling the status
+};
+
+  
+
+  const handleSubmit = async () => {
+    if (!inputValue.trim()) {                                        // * Check if the input value is empty or just whitespace
+      setPlaceholderText("Cannot be blank input");                   // * If input is empty, set placeholder text to indicate that
+      return;                                                        // * Return to prevent further execution
+    }
+
+    try {
+      const newJoke = await postJoke(inputValue);
+      const updatedAllJokes = [...allJokes, newJoke];
+      setAllJokes(updatedAllJokes);                                  // * Update the state with the new array of all jokes
+      setUntoldJokes(updatedAllJokes.filter((joke) => !joke.told));  // * Updates the UI with the new submission ('told' property=false when submitted)
+      setInputValue("");                                             // * Reset the input value after submission
+      setPlaceholderText("New One Liner");
+    } catch (error) {
+      console.error("Failed to post new joke:", error);              // Catch & log errors if one arises
+    }
+  };
+
+  return (
+    <>
+      <div className="app-heading">
+        <div className="app-heading-circle">
+          <img className="app-logo" src={stevePic} alt="Good job Steve" />
+        </div>
+        <h2>Chuckle Checklist</h2>
+        <div className="joke-add-form">
+          <input
+            className="joke-input"
+            type="text"
+            value={inputValue}
+            placeholder={placeholderText}
+            onChange={(event) => {
+              setInputValue(event.target.value);                   // * Handles text input changes that are not submitted
+              if (placeholderText !== "New One Liner") {
+                setPlaceholderText("New One Liner");
+              }
+            }}
+          />
+          <button className="joke-input-submit" onClick={handleSubmit}>
+            Submit Joke
+          </button>
+        </div>
+        <div className="joke-lists-container">
+          <div className="joke-list-container">
+            <h2>Untold Jokes <span className="untold-count">({untoldJokes.length})</span></h2>
+            <ul>
+              {untoldJokes.map((joke, index) => (
+                <li key={index} className="joke-list-item">
+                  <p className="joke-list-item-text">{joke.text}</p>
+                  <div>
+                    <button className="joke-list-action-delete" onClick={() => handleDelete(joke.id)}>Delete</button>
+                    <button className="joke-list-action-toggle" onClick={() => handleToggleTold(joke)}>
+                          {joke.told ? 'Mark Untold' : 'Mark Told'}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="joke-list-container">
+            <h2>Told Jokes <span className="told-count">({toldJokes.length})</span></h2>
+            <ul>
+              {toldJokes.map((joke, index) => (
+                <li key={index} className="joke-list-item">
+                  <p className="joke-list-item-text">{joke.text}</p>
+                  <div>
+                    <button className="joke-list-action-delete" onClick={() => handleDelete(joke.id)}>Delete</button>
+                    <button className="joke-list-action-toggle" onClick={() => handleToggleTold(joke)}>
+                            {joke.told ? 'Mark Untold' : 'Mark Told'}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+```
+```
+// services/jokeService.js
+
+const baseURL = 'http://localhost:8088/jokes'; 
+
+// # Function to fetch jokes from the database
+export const fetchJokes = async () => {
+  try {
+    const response = await fetch(baseURL);
+    if (!response.ok) {
+      throw new Error('Failed to fetch jokes');
+    }
+    const data = await response.json();
+    return data; // Return the fetched jokes
+  } catch (error) {
+    console.error("Error fetching jokes:", error);
+    throw error; // Rethrow the error so it can be handled by the caller
+  }
+};
+
+// # Function to post a new joke
+export const postJoke = async (jokeText) => {
+  try {
+    const response = await fetch(baseURL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: jokeText,
+        told: false,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Error posting joke');
+    }
+
+    const data = await response.json();
+    return data; 
+  } catch (error) {
+    console.error("Failed to post new joke:", error);
+    throw error; 
+  }
+};
+// # Function to delete a joke from the database
+export const deleteJoke = async (jokeId) => {
+  try {
+    const response = await fetch(`${baseURL}/${jokeId}`, {
+      method: 'DELETE'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete joke');
+    }
+
+    return true; // Return true to indicate successful deletion
+  } catch (error) {
+    console.error("Error deleting joke:", error);
+    throw error; // Rethrow the error so it can be handled by the caller
+  }
+};
+// # Function to modify the told status of a joke 
+export const toggleToldStatus = async (joke) => {
+  try {
+    const updatedJoke = { ...joke, told: !joke.told };
+    console.log(`Sending PUT request to update joke ${joke.id}`);
+
+    const response = await fetch(`http://localhost:8088/jokes/${joke.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updatedJoke)
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update joke status');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error updating joke status:", error);
+    throw error;
+  }
+};
+```
+---
+Title: .
+Description:
+(Generate a brief description about the purpose and main functions of the project based on the provided source code.)
+
+Contents:
+- Table of Contents generated from modules and files mentioned in the code.
+
+Installation:
+1. (List installation steps if needed, including dependencies and library requirements)
+2.
+3.
+
+Usage:
+1. (Describe how to use the project based on the provided source code)
+2.
+3.
+
+Contributing:
+1. (Include guidelines for contributing to the project, such as submitting issues or pull requests)
+2.
+
+License: (Insert License Information Here)
+Version: (Insert Project Version Here)
+Date: 2024-04-12
+
+Replace "(Generate a brief description about the purpose and main functions of the project based on the provided source code.)", "(List installation steps if needed, including dependencies and library requirements)", "(Describe how to use the project based on the provided source code)", "(Include guidelines for contributing to the project, such as submitting issues or pull requests)", "(Insert License Information Here)" and "(Insert Project Version Here)" with appropriate information relevant to your specific project. This prompt should guide the LLM in generating a readable and useful readme file based on the source code you've provided. In markdown.
+---
